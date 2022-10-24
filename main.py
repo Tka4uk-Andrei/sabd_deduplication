@@ -10,10 +10,11 @@ import time
 
 HASH_FUNCTION_NONE = "None"
 HASH_FUNCTION_MD5 = "MD5"
+HASH_FUNCTION_SHA1 = "sha1"
 
-DATA_PATH = "data"
+DATA_PATH = "test_data"
 SEGMENT_SIZE = 10
-ZIPPED_DATA_CELL_SIZE = 8
+ZIPPED_DATA_CELL_SIZE = 3
 HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
 FOLDER_WITH_COMPRESED_DATA = "compressed_data"
 FOLDER_WITH_DECOMPRESED_DATA = "decompressed_data"
@@ -42,7 +43,9 @@ def get_hash_for_segment(byte_slice : bytes, hash_function : str) -> bytes:
     if (hash_function == HASH_FUNCTION_NONE):
         return byte_slice.hex()
     elif (hash_function == HASH_FUNCTION_MD5):
-        return hashlib.md5().hexdigest()
+        return hashlib.md5(byte_slice).hexdigest()
+    elif (hash_function == HASH_FUNCTION_SHA1):
+        return hashlib.sha1(byte_slice).hexdigest()
     else:
         print("FAILED: get_hash_for_segment()")
         exit(-1)
@@ -189,6 +192,7 @@ def compress_data():
         print(f"Hashes from prev try : {reused_nodes}")
         print(f"Dublicated hashes    : {dublicated_nodes}")
         print(f"Process time         : {end_ts - start_ts}")
+        print("---")
         prev_hash_dict_len = hash_dict_len
 
 
@@ -223,6 +227,36 @@ def decompress_data():
         binary_file_write(FOLDER_WITH_DECOMPRESED_DATA + "/" + file[0:-4], data_arr)
         end_ts = time.time()
         print(f"Process time         : {end_ts - start_ts}")
+        print("---")
+
+
+def data_compare():
+    orig_files = get_file_names_in_folder(DATA_PATH)
+    decompressed_files = get_file_names_in_folder(FOLDER_WITH_DECOMPRESED_DATA)
+
+    if len(orig_files) != len(decompressed_files):
+        print("Comprassion wasn't succeed")
+        exit(-1)
+
+    for i in range(0, len(orig_files)):
+        if (orig_files[i] != decompressed_files[i]):
+            print("Comprassion wasn't succeed")
+            exit(-1)
+
+    print()
+
+    for file in orig_files:
+        print(f"Check file: {file}")
+        orig_data = binary_file_read(DATA_PATH + "/" + file)
+        res_data = binary_file_read(FOLDER_WITH_DECOMPRESED_DATA + "/" + file)
+        data_delta = 0
+        for i in range(0, min(len(orig_data), len(res_data))):
+            if orig_data[i] != res_data[i]:
+                data_delta += 1
+        data_delta += max(len(orig_data), len(res_data)) - min(len(orig_data), len(res_data))
+        print(f"Data delta is: {data_delta}")
+        print("---")
+
 
 
 if __name__ == "__main__":
@@ -237,7 +271,12 @@ if __name__ == "__main__":
             c_flag = 0
 
     if c_flag == 1:
+        if os.path.isfile(BD_FILE_NAME):
+            os.remove(BD_FILE_NAME)
         compress_data()
+
+    print()
 
     if d_flag == 1:
         decompress_data()
+        data_compare()
