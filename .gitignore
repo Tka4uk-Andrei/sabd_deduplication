@@ -133,3 +133,4 @@ test_data/
 data/
 compressed_data/
 decompressed_data/
+hashes.db
