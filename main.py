@@ -12,8 +12,8 @@ HASH_FUNCTION_NONE = "None"
 HASH_FUNCTION_MD5 = "MD5"
 
 DATA_PATH = "data"
-SEGMENT_SIZE = 4
-ZIPPED_DATA_CELL_SIZE = 4
+SEGMENT_SIZE = 10
+ZIPPED_DATA_CELL_SIZE = 8
 HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
 FOLDER_WITH_COMPRESED_DATA = "compressed_data"
 FOLDER_WITH_DECOMPRESED_DATA = "decompressed_data"
@@ -140,8 +140,6 @@ def compress_data():
 
     # work with files
     files = get_file_names_in_folder(DATA_PATH)
-    hash_dict = {}
-    hash_dict_len = len(bd_hashes)
     prev_hash_dict_len = 0
     for file in files:
         start_ts = time.time()
@@ -149,8 +147,10 @@ def compress_data():
         dublicated_nodes = 0
         # get data from bd
         bd_hashes = {}
+        hash_dict = {}
         for data in get_data_from_bd(cur):
             bd_hashes[data.hash] = data
+        hash_dict_len = len(bd_hashes)
         # compress file
         print(f"Compress file: {file}")
         bin_arr = binary_file_read(DATA_PATH + "/" + file)
