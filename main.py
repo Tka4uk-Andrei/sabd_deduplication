@@ -1,24 +1,31 @@
 from dataclasses import dataclass
 import hashlib
-from operator import truediv
-from platform import node
-from re import L
 import sqlite3 as sl
 import os
 import sys
 import time
 
-HASH_FUNCTION_NONE = "None"
-HASH_FUNCTION_MD5 = "MD5"
-HASH_FUNCTION_SHA1 = "sha1"
+HASH_FUNCTION_NONE = "None" # any segment size in bytes
+HASH_FUNCTION_MD5 = "MD5"   # min segment size = 16 bytes
+HASH_FUNCTION_SHA1 = "sha1" # min segment size = 20 bytes
 
 DATA_PATH = "test_data"
-SEGMENT_SIZE = 10
+SEGMENT_SIZE = 40
 ZIPPED_DATA_CELL_SIZE = 3
 HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
 FOLDER_WITH_COMPRESED_DATA = "compressed_data"
 FOLDER_WITH_DECOMPRESED_DATA = "decompressed_data"
 BD_FILE_NAME = "hashes.db"
+
+TEST_ATTEMPS_AMOUT = 1
+RES_FOLDER = "test_results"
+
+avg_time_compress = {}
+avg_time_decompess = {}
+reused_hashes = {}
+hash_inc_amount = {}
+dublicated_amount = {}
+decompress_errors = {}
 
 
 @dataclass
@@ -27,12 +34,6 @@ class DataNode():
     hash : str
     hash_val : str
     rep_count : int
-
-
-# def data_node_adapter(vehicle):
-#     return f"{vehicle.id};{vehicle.hash};{vehicle.hash_val};{vehicle.rep_count}".encode("utf-8")
-
-# sl.register_adapter(DataNode, data_node_adapter)
 
 
 def get_file_names_in_folder(relative_folder_path : str):
@@ -191,8 +192,17 @@ def compress_data():
         print(f"Nodes increased by   : {hash_dict_len - prev_hash_dict_len}")
         print(f"Hashes from prev try : {reused_nodes}")
         print(f"Dublicated hashes    : {dublicated_nodes}")
-        print(f"Process time         : {end_ts - start_ts}")
+        print(f"Process time (sec)   : {end_ts - start_ts}")
         print("---")
+
+        if (avg_time_compress.get(file) == None):
+            avg_time_compress[file] = 0
+
+        avg_time_compress[file] += end_ts - start_ts
+        reused_hashes[file] = reused_nodes
+        hash_inc_amount[file] = hash_dict_len - prev_hash_dict_len
+        dublicated_amount[file] = dublicated_nodes
+
         prev_hash_dict_len = hash_dict_len
 
 
@@ -200,7 +210,6 @@ def compress_data():
     conn.close()
 
 
-# def decompress_data():
 def decompress_data():
 
     # connect to bd
@@ -226,8 +235,13 @@ def decompress_data():
                                             id_dict, ZIPPED_DATA_CELL_SIZE)
         binary_file_write(FOLDER_WITH_DECOMPRESED_DATA + "/" + file[0:-4], data_arr)
         end_ts = time.time()
-        print(f"Process time         : {end_ts - start_ts}")
+        print(f"Process time (sec)   : {end_ts - start_ts}")
         print("---")
+
+        if (avg_time_decompess.get(file) == None):
+            avg_time_decompess[file] = 0
+
+        avg_time_decompess[file] += end_ts - start_ts
 
 
 def data_compare():
@@ -255,24 +269,64 @@ def data_compare():
                 data_delta += 1
         data_delta += max(len(orig_data), len(res_data)) - min(len(orig_data), len(res_data))
         print(f"Data delta is: {data_delta}")
+        decompress_errors[file] = data_delta
         print("---")
 
+
+def run_compress_test():
+    for i in range(0, TEST_ATTEMPS_AMOUT):
+        print(f'\nCOMPRESS TRY: {i:4}')
+        if os.path.isfile(BD_FILE_NAME):
+            os.remove(BD_FILE_NAME)
+        compress_data()
+    suffix = f'{SEGMENT_SIZE}_{ZIPPED_DATA_CELL_SIZE}_{HASH_FUNCTION_IN_USE}'
+    with open(RES_FOLDER + '/' + f'avg_time_compress_{suffix}.txt', 'w') as f:
+        for key, data in avg_time_compress.items():
+            f.write(f"""{('"' + key + '"'):40} {data / TEST_ATTEMPS_AMOUT}\n""")
+    with open(RES_FOLDER + '/' + f'reused_hashes_{suffix}.txt', 'w') as f:
+        for key, data in reused_hashes.items():
+            f.write(f"""{('"' + key + '"'):40} {data}\n""")
+    with open(RES_FOLDER + '/' + f'hash_inc_amount_{suffix}.txt', 'w') as f:
+        for key, data in hash_inc_amount.items():
+            f.write(f"""{('"' + key + '"'):40} {data}\n""")
+    with open(RES_FOLDER + '/' + f'dublicated_amount_{suffix}.txt', 'w') as f:
+        for key, data in dublicated_amount.items():
+            f.write(f"""{('"' + key + "'"):40} {data}\n""")
+
+
+def run_decompress_test():
+    for i in range(0, TEST_ATTEMPS_AMOUT):
+        print(f'\nDECOMPRESS TRY: {i:4}')
+        decompress_data()
+        data_compare()
+    suffix = f'{SEGMENT_SIZE}_{ZIPPED_DATA_CELL_SIZE}_{HASH_FUNCTION_IN_USE}'
+    with open(RES_FOLDER + '/' + f'avg_time_decompess_{suffix}.txt', 'w') as f:
+        for key, data in avg_time_decompess.items():
+            f.write(f"""{('"' + key + '"'):40} {data / TEST_ATTEMPS_AMOUT}\n""")
+    with open(RES_FOLDER + '/' + f'decompress_errors_{suffix}.txt', 'w') as f:
+        for key, data in decompress_errors.items():
+            f.write(f"""{('"' + key + '"'):40} {data}\n""")
 
 
 if __name__ == "__main__":
 
     c_flag = 1
     d_flag = 1
+    t_flag = 1
 
     if len(sys.argv) == 1:
         if sys.argv[0] == "-c":
             d_flag = 0
+            t_flag = 0
         elif sys.argv[0] == "-d":
             c_flag = 0
+            t_flag = 0
+        elif sys.argv[0] == "-t":
+            c_flag = 0
+            d_flag = 0
+            
 
     if c_flag == 1:
-        if os.path.isfile(BD_FILE_NAME):
-            os.remove(BD_FILE_NAME)
         compress_data()
 
     print()
@@ -280,3 +334,52 @@ if __name__ == "__main__":
     if d_flag == 1:
         decompress_data()
         data_compare()
+
+    if t_flag == 1:
+        SEGMENT_SIZE = 100
+
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_MD5
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_SHA1
+        run_compress_test()
+        run_decompress_test()
+
+        SEGMENT_SIZE = 50
+
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_MD5
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_SHA1
+        run_compress_test()
+        run_decompress_test()
+
+        SEGMENT_SIZE = 20
+
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_MD5
+        run_compress_test()
+        run_decompress_test()
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_SHA1
+        run_compress_test()
+        run_decompress_test()
+
+        SEGMENT_SIZE = 10
+
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
+        run_compress_test()
+        run_decompress_test()
+
+        SEGMENT_SIZE = 4
+
+        HASH_FUNCTION_IN_USE = HASH_FUNCTION_NONE
+        run_compress_test()
+        run_decompress_test()
