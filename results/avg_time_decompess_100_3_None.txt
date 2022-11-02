@@ -1,0 +1,8 @@
+"01 - HEAVY DAY.mp3.bin      "             0.075272479057312
+"02 - Dice.mp3.bin           "             0.0667096185684204
+"03 - SHOTGUN&HEAD.mp3.bin   "             0.06939215660095215
+"04 - Lily.mp3.bin           "             0.0735642409324646
+"05 - Ride the Fire!.mp3.bin "             0.05846503496170044
+"06 - Birthday Train.mp3.bin "             0.05473504781723022
+"07 - Big Blast Sonic.mp3.bin"             0.06634172677993774
+"08 - Coming Home.mp3.bin    "             0.06490725040435791
