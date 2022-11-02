@@ -1,0 +1,26 @@
+#!/bin/bash
+
+gnuplot graph_scripts/avg_time_compress_10_and_4.gnu
+gnuplot graph_scripts/avg_time_compress_20.gnu
+gnuplot graph_scripts/avg_time_compress_50.gnu
+gnuplot graph_scripts/avg_time_compress_100.gnu
+
+gnuplot graph_scripts/avg_time_decompress_10_and_4.gnu
+gnuplot graph_scripts/avg_time_decompress_20.gnu
+gnuplot graph_scripts/avg_time_decompress_50.gnu
+gnuplot graph_scripts/avg_time_decompress_100.gnu
+
+gnuplot graph_scripts/dublicated_amount_10_and_4.gnu
+gnuplot graph_scripts/dublicated_amount_20.gnu
+gnuplot graph_scripts/dublicated_amount_50.gnu
+gnuplot graph_scripts/dublicated_amount_100.gnu
+
+gnuplot graph_scripts/hash_inc_amount_10_and_4.gnu
+gnuplot graph_scripts/hash_inc_amount_20.gnu
+gnuplot graph_scripts/hash_inc_amount_50.gnu
+gnuplot graph_scripts/hash_inc_amount_100.gnu
+
+gnuplot graph_scripts/reused_hashes_10_and_4.gnu
+gnuplot graph_scripts/reused_hashes_20.gnu
+gnuplot graph_scripts/reused_hashes_50.gnu
+gnuplot graph_scripts/reused_hashes_100.gnu
