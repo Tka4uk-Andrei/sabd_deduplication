@@ -1,5 +1,5 @@
 set encoding utf8
-set terminal png size 640, 800
+set terminal png size 820, 640
 set output "img/avg_time_decompress_10_and_4.png"
 
 set grid xtics lc rgb '#555555' lw 1 lt 0
@@ -17,7 +17,15 @@ linecolor rgb '#ffcc89' \
 linetype 1 linewidth 2 \
 pointtype 7 pointsize 1
 
-set xtics rotate by 70 right
+set xtics rotate by 30 right
+set ylabel offset -2,0
+
+set lmargin at screen 0.22
+set bmargin at screen 0.25
+set rmargin at screen 0.97
+set tmargin at screen 0.97
+
+set offset 0.2,0.2,0,0
 
 set key left top
 
